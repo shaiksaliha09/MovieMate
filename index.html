@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieMate - Movie Rating & Recommendation System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary-color, #4f46e5)',
+                        primaryHover: 'var(--primary-hover, #4338ca)',
+                        primaryBg: 'var(--primary-bg, rgba(79, 70, 229, 0.1))'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-bg: rgba(79, 70, 229, 0.1);
+        }
+        .theme-indigo { --primary-color: #4f46e5; --primary-hover: #4338ca; --primary-bg: rgba(79, 70, 229, 0.1); }
+        .theme-emerald { --primary-color: #059669; --primary-hover: #047857; --primary-bg: rgba(5, 150, 105, 0.1); }
+        .theme-sunset { --primary-color: #f97316; --primary-hover: #ea580c; --primary-bg: rgba(249, 115, 22, 0.1); }
+        .theme-violet { --primary-color: #8b5cf6; --primary-hover: #7c3aed; --primary-bg: rgba(139, 92, 246, 0.1); }
+
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .font-roboto { font-family: 'Roboto', sans-serif; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .bg-primary:hover { background-color: var(--primary-hover) !important; }
+        .text-primary { color: var(--primary-color) !important; }
+        .border-primary { border-color: var(--primary-color) !important; }
+        .bg-primary-soft { background-color: var(--primary-bg) !important; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body id="body-font" class="font-inter theme-indigo bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <!-- ================= 1. AUTHENTICATION VIEW ================= -->
+    <div id="auth-view" class="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10">
+        <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-8 backdrop-blur">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-primary text-white rounded-2xl mb-4 text-2xl font-bold shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-clapperboard"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">MovieMate</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Sign in with any @gmail.com account</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
+                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 shadow-sm transition">Sign In</button>
+                <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 rounded-lg transition">Create Account</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Gmail Address (@gmail.com)</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="user@gmail.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary hover:bg-primaryHover text-white font-semibold rounded-xl transition shadow-lg">Sign In to Dashboard</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Your Full Name</label>
+                    <input type="text" id="reg-name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="John Doe">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Gmail Address (@gmail.com)</label>
+                    <input type="email" id="reg-email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="user@gmail.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Create Password</label>
+                    <input type="password" id="reg-password" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary hover:bg-primaryHover text-white font-semibold rounded-xl transition shadow-lg">Create Account & Enter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 2. DASHBOARD VIEW ================= -->
+    <div id="dashboard-view" class="hidden flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between hidden md:flex">
+            <div>
+                <div class="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-md">
+                        <i class="fa-solid fa-clapperboard"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg tracking-tight block">MovieMate</span>
+                        <span class="text-xs text-slate-400">Analysis & Recommender</span>
+                    </div>
+                </div>
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="switchTab('home')" id="nav-home" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-white transition"><i class="fa-solid fa-chart-pie w-5"></i> Dashboard</button>
+                    <button onclick="switchTab('explorer')" id="nav-explorer" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-compass w-5"></i> Movie Explorer</button>
+                    <button onclick="switchTab('add-movie')" id="nav-add-movie" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-circle-plus w-5"></i> Add / Edit Movie</button>
+                    <button onclick="switchTab('ratings')" id="nav-ratings" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-star w-5"></i> Movie Ratings</button>
+                    <button onclick="switchTab('recs')" id="nav-recs" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-wand-magic-sparkles w-5"></i> Recommendations</button>
+                    <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i class="fa-solid fa-gear w-5"></i> Settings</button>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 mb-3 px-2">
+                    <div class="w-9 h-9 rounded-full bg-primary-soft text-primary font-bold flex items-center justify-center" id="user-avatar">U</div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-semibold truncate" id="user-display-name">User</p>
+                        <p class="text-xs text-slate-400 truncate" id="user-display-email">user@gmail.com</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-y-auto">
+            <!-- Top Header -->
+            <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-20 flex items-center justify-between px-6">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-film text-primary text-lg"></i>
+                    <h2 class="font-bold text-lg" id="welcome-header-text">Welcome, User!</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="triggerAIAssistant()" class="flex items-center gap-2 px-3 py-1.5 bg-primary-soft text-primary rounded-lg text-xs font-semibold hover:opacity-80 transition">
+                        <i class="fa-solid fa-robot"></i> AI Guide
+                    </button>
+                    <button onclick="switchTab('settings')" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <div class="p-6 flex-1 max-w-7xl w-full mx-auto">
+
+                <!-- VIEW 1: HOME DASHBOARD -->
+                <div id="view-home" class="space-y-6">
+                    <div class="rounded-2xl p-6 text-white shadow-xl bg-primary flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-1" id="dash-welcome-title">Welcome back, User!</h2>
+                            <p class="text-sm opacity-90">Explore your favorite films across Telugu, Hindi, English, and Tamil industries, click any card for details, and build custom recommendations.</p>
+                        </div>
+                        <button onclick="switchTab('explorer')" class="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-xl text-sm shadow-md hover:bg-slate-100 transition whitespace-nowrap">Explore Movies Now</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Movies</p>
+                            <h3 class="text-3xl font-bold mt-2" id="stat-total-movies">0</h3>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Average Rating</p>
+                            <h3 class="text-3xl font-bold mt-2 text-amber-500" id="stat-avg-rating">4.8 / 5</h3>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Industries Covered</p>
+                            <h3 class="text-3xl font-bold mt-2 text-primary">4</h3>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Ratings Submitted</p>
+                            <h3 class="text-3xl font-bold mt-2 text-emerald-500" id="stat-user-ratings">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-base mb-4">Genre Distribution</h3>
+                            <div class="relative h-64"><canvas id="genreChart"></canvas></div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-base mb-4">Top Rated Movies by Industry</h3>
+                            <div class="relative h-64"><canvas id="industryRatingChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: MOVIE EXPLORER -->
+                <div id="view-explorer" class="space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="relative w-full md:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400"></i>
+                            <input type="text" id="search-movie" oninput="filterMovies()" placeholder="Search movies..." class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto flex-wrap">
+                            <select id="filter-industry" onchange="filterMovies()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="All">All Industries</option>
+                                <option value="Telugu">Telugu</option>
+                                <option value="Hindi">Hindi</option>
+                                <option value="English">English</option>
+                                <option value="Tamil">Tamil</option>
+                            </select>
+                            <select id="filter-genre" onchange="filterMovies()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="All">All Genres</option>
+                                <option value="Action">Action</option>
+                                <option value="Drama">Drama</option>
+                                <option value="Sci-Fi">Sci-Fi</option>
+                                <option value="Thriller">Thriller</option>
+                                <option value="Romance">Romance</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Movie Grid -->
+                    <div id="movie-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- VIEW 3: ADD / EDIT MOVIE -->
+                <div id="view-add-movie" class="space-y-6 hidden max-w-xl mx-auto">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-sm">
+                        <h3 class="font-bold text-xl mb-2">Add or Edit Film Details</h3>
+                        <p class="text-xs text-slate-400 mb-6">Add a new movie or update posters and 2-line synopses for existing ones.</p>
+                        
+                        <form onsubmit="handleAddNewMovie(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Movie Title</label>
+                                <input type="text" id="new-title" required placeholder="e.g., Baahubali / Animal" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Industry</label>
+                                    <select id="new-industry" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="Telugu">Telugu</option>
+                                        <option value="Hindi">Hindi</option>
+                                        <option value="English">English</option>
+                                        <option value="Tamil">Tamil</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Genre</label>
+                                    <select id="new-genre" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="Action">Action</option>
+                                        <option value="Drama">Drama</option>
+                                        <option value="Sci-Fi">Sci-Fi</option>
+                                        <option value="Thriller">Thriller</option>
+                                        <option value="Romance">Romance</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Release Year</label>
+                                    <input type="number" id="new-year" value="2026" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Initial Rating</label>
+                                    <input type="number" step="0.1" min="1" max="5" id="new-rating" value="4.8" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Poster Image URL</label>
+                                <input type="url" id="new-poster" placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">2-Line Synopsis</label>
+                                <textarea id="new-synopsis" rows="2" placeholder="Strictly 2 lines about the movie..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-primary hover:bg-primaryHover text-white font-semibold rounded-xl transition shadow-lg">Save & Add Movie</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: MOVIE RATINGS -->
+                <div id="view-ratings" class="space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="font-bold text-lg">Rate Movies</h3>
+                                <p class="text-xs text-slate-400 mt-1">Your feedback updates community ratings instantly.</p>
+                            </div>
+                        </div>
+                        <div id="rating-movies-list" class="space-y-4">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: RECOMMENDATIONS -->
+                <div id="view-recs" class="space-y-6 hidden">
+                    <div class="rounded-2xl p-6 text-white shadow-xl bg-primary">
+                        <h3 class="text-xl font-bold mb-2">Smart Recommendation Generator</h3>
+                        <p class="text-sm opacity-90 max-w-2xl">Enter any movie name, industry, genre, and your rating. Clicking Generate adds it straight to the Movie Explorer and provides matched suggestions!</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                        <form onsubmit="handleCustomRecommendation(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Movie Name</label>
+                                    <input type="text" id="rec-input-title" required placeholder="e.g., Interstellar" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Your Rating (1 to 5)</label>
+                                    <input type="number" step="0.1" min="1" max="5" id="rec-input-rating" value="4.9" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Industry</label>
+                                    <select id="rec-input-industry" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="English">English</option>
+                                        <option value="Telugu">Telugu</option>
+                                        <option value="Hindi">Hindi</option>
+                                        <option value="Tamil">Tamil</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Genre</label>
+                                    <select id="rec-input-genre" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="Sci-Fi">Sci-Fi</option>
+                                        <option value="Action">Action</option>
+                                        <option value="Drama">Drama</option>
+                                        <option value="Romance">Romance</option>
+                                        <option value="Thriller">Thriller</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-primary hover:bg-primaryHover text-white font-semibold rounded-xl transition shadow-lg">Generate & Add to Explorer</button>
+                        </form>
+                    </div>
+
+                    <div id="recommendations-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- VIEW 6: SETTINGS -->
+                <div id="view-settings" class="space-y-6 hidden max-w-2xl">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-6">
+                        <h3 class="font-bold text-lg border-b border-slate-200 dark:border-slate-800 pb-4">Application Settings</h3>
+                        
+                        <!-- Theme Toggle -->
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-sm">Theme Mode</p>
+                                <p class="text-xs text-slate-400">Switch between light and dark neutral palettes</p>
+                            </div>
+                            <button onclick="toggleTheme()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition">Toggle Dark/Light</button>
+                        </div>
+
+                        <!-- Vibrant Color Palettes -->
+                        <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-4">
+                            <div>
+                                <p class="font-semibold text-sm">Color Palette</p>
+                                <p class="text-xs text-slate-400">Select vibrant accent color modes</p>
+                            </div>
+                            <select onchange="changeColorPalette(this.value)" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm">
+                                <option value="indigo">Indigo Blue (Vibrant)</option>
+                                <option value="emerald">Emerald Green (Fresh)</option>
+                                <option value="sunset">Sunset Orange (Warm)</option>
+                                <option value="violet">Royal Violet (Rich)</option>
+                            </select>
+                        </div>
+
+                        <!-- Font Family Option -->
+                        <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-4">
+                            <div>
+                                <p class="font-semibold text-sm">Font Style</p>
+                                <p class="text-xs text-slate-400">Choose preferred typography</p>
+                            </div>
+                            <select onchange="changeFontFamily(this.value)" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm">
+                                <option value="inter">Inter (Clean Modern)</option>
+                                <option value="roboto">Roboto (Sleek)</option>
+                                <option value="poppins">Poppins (Friendly)</option>
+                            </select>
+                        </div>
+
+                        <!-- Logout Option -->
+                        <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-4">
+                            <div>
+                                <p class="font-semibold text-sm">Session Control</p>
+                                <p class="text-xs text-slate-400">Safely log out of your account</p>
+                            </div>
+                            <button onclick="handleLogout()" class="px-4 py-2 bg-red-50 dark:bg-red-950/30 text-red-600 rounded-xl font-medium text-sm hover:bg-red-100 transition">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Movie Details Pop-up Modal -->
+    <div id="movie-detail-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden relative">
+            <button onclick="closeMovieDetailModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center z-10 hover:bg-black"><i class="fa-solid fa-xmark"></i></button>
+            <div id="modal-content-inner">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Onboarding Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center font-bold text-lg">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">AI Website Guide</h3>
+                    <p class="text-xs text-slate-400">Your interactive tour assistant</p>
+                </div>
+            </div>
+            <p id="ai-modal-text" class="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+                Welcome to MovieMate! Explore your requested films across Telugu, Hindi, English, and Tamil industries. Tap any movie card to popup its ratings, genre, and synopsis!
+            </p>
+            <div class="flex justify-between items-center">
+                <span id="ai-step-indicator" class="text-xs text-slate-400 font-medium">Step 1 of 3</span>
+                <div class="flex gap-2">
+                    <button onclick="closeAIModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Skip</button>
+                    <button onclick="nextAIStep()" class="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg">Next Tip</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        const moviesData = [
+            // Telugu
+            { id: 1, title: "Baahubali", industry: "Telugu", genre: "Action", year: 2015, rating: 4.8, votes: 2450, poster: "https://images.openai.com/static-rsc-4/ffvZf-1GY3t9i32Em5Md1rNvrqd_FrHCMntB02WQ8gdGPOBSQbz1bRTwkUezdCdBu5yRFg2m6S8QyVA45_B0e1umFJ5cXxAeMqQTlqRB-gbS2g0mYoI8cesAFi0-9lpg_qXz9AmklUXeYIKmJZzSTpUA8-MPEZuL5gdhaKI_k6YrGOfWRvKkhK7TkX-B_BWt?purpose=fullsize", synopsis: "A daring young man rescues a warrior queen and uncovers his royal lineage in Mahishmati.\nHe faces monumental trials to reclaim his rightful throne and protect his kingdom." },
+
+
+            { id: 2, title: "Pushpa", industry: "Telugu", genre: "Action", year: 2021, rating: 4.6, votes: 1980, poster: "https://images.openai.com/static-rsc-4/nBc-4BkIAhe8j2Qwbu6ngAvEsCIYdhTKQa9OlpHVzD0RI_uSkK6YkwgJn8FJMDhMmRomjLw2dqSddRW5CHfjV_vEZnfooTUffA_tGVrZlaDIAW3_TmRgUiMOfV4MGs9XDU12KdZN2L-isu-CoTEntbfIAnjC7FiX53-z4xRkvsLPdOCmwETKI8LC20avm4Z5?purpose=fullsize", synopsis: "A fearless daily wage laborer rises rapidly through the syndicate of red sandalwood smuggling.\nHis uncompromising defiance makes him a powerful force against ruthless rivals and law." },
+
+
+            { id: 3, title: "RRR", industry: "Telugu", genre: "Action", year: 2022, rating: 4.9, votes: 3100, poster: "https://images.openai.com/static-rsc-4/gLplbb3NYqnFIEscZ39xhIviMJzVvPoBdo0wd53Cz0dEx_UvMSzFVGYA4f26RUmc5tnvKYZl9Tj1eAfnqUKbtlo166fDPZeiZ9IgQHkzCNBqy1Kpcdne_YCGw35dEssbgt8qSpzpwMgZBYqgzi5aEMDLbeb7FqI288uqPou3m5I?purpose=inline", synopsis: "Two legendary freedom fighters form an unbreakable bond while fighting British colonial rule.\nTheir epic journey of friendship and rebellion transforms into a historic nationwide revolution." },
+
+
+            { id: 4, title: "Jersey", industry: "Telugu", genre: "Drama", year: 2019, rating: 4.8, votes: 1400, poster: "https://images.openai.com/static-rsc-4/AcSk3TYiJptTRXLArsA18MDQLBgxQD5Ajx6DeRAN5S88J-lk_nmSQQXJN1xgshliwif-f5alXHKy96BKJKTQEHIEm29223xRY97Q4JvD9jEpvNnI1kC5GsRIePvjKBOrJPPulVZWpVal8k9w33sIYjg8iHy62zRrJ7AR2qPFAnSqgCQUL_HFSkzw65VU7p55?purpose=fullsize", synopsis: "A failed thirty-six-year-old cricketer stages an emotional comeback to fulfill his young son's dream.\nHe fights severe personal odds and physical exhaustion to earn national jersey honors." },
+
+
+            { id: 5, title: "Sita Ramam", industry: "Telugu", genre: "Drama", year: 2022, rating: 4.9, votes: 1750, poster: "https://images.openai.com/static-rsc-4/7I9SKOLMvAfLvr5ZduaaB8s9nXQesCg3t0emJKod6nO0DNEX1zGXTre0xdT3kbS2lKOAwMW4R-yomGkhWp5zQPuS49n--QcAAkCDJOjUOtv0lAolXC7EVcUgxEuhAZXl56f37YdVSs3YoqRZsBU7BENofQoKauFPReAVZkujJISAYyHCHNRouI77M4CUBXPV?purpose=fullsize", synopsis: "An orphan soldier receives a poetic letter from a mysterious woman named Sita in 1964.\nDecades later, an army officer embarks on a poignant quest to deliver an undelivered love letter." },
+
+
+            { id: 6, title: "Hi Nanna", industry: "Telugu", genre: "Drama", year: 2023, rating: 4.7, votes: 1100, poster: "https://images.openai.com/static-rsc-4/JPAIdqsld_Scmry9czPZTHTCv94cGNCq_w2FFvpzoe5NbeQA4qyv-qFPOZeIGxPzMZ6p6QD9QSomE2BS4-QeRRB-Rgzcwpm724QmB0gw9ZH_6Q0L8xG6rTaiHjDV5QJ1JLqG6QAoKNPXCKz6vdOP7OIdNOt2Zykj9LMble9poOuN4UKRGqDaSlfCkVx419iD?purpose=fullsize", synopsis: "A doting single father weaves enchanting fairy-tale stories for his inquisitive young daughter.\nTheir serene lives shift dramatically when a compassionate photographer enters their world." },
+
+
+            { id: 7, title: "Kalki 2898 AD", industry: "Telugu", genre: "Sci-Fi", year: 2024, rating: 4.7, votes: 2300, poster: "https://images.openai.com/static-rsc-4/b_BRBHpMPBjKG5xwj7sI1MUB6p7q5WVCyNAurn7jeJtkS3Wh1A3CPb1RZTgkJLiNG8vh_Odb1jfty25lAX0wfiWXoCLdbbt-7XAZBHbAAmLbYnVvRNBvkIiXOfz-0HSGF4zM62NpZfsKSst4amMoa7dTyxQogKDw9p_gzoP4bbOXBSmdn8iptLVvwatm5WDh?purpose=fullsize", synopsis: "Set in a dystopian post-apocalyptic future in the city of Kasi ruled by supreme forces.\nA bounty hunter gets entangled in a mission to safeguard a prophesied unborn savior." },
+
+
+            { id: 8, title: "Eega", industry: "Telugu", genre: "Sci-Fi", year: 2012, rating: 4.6, votes: 1500, poster: "https://images.openai.com/static-rsc-4/dXARqXNZS_1sKSY5nwlqINEzvglxbvfnwypWKaLdiLnUJcMhLWGK-0XIAwiohWOfDpk50742WAuR7ms369v_r-ytL5gm0q8EniaJFh4on0A_PuDlthboHTgMplqlo-e1x1GE98OMq1zI6CH9D0ew9ds6SDDQL8KCeQPkjVRwSz85FMvuyI9OfomhWd7UBgI0?purpose=fullsize", synopsis: "A murdered young man reincarnates as a housefly seeking vengeance against his killer.\nHe teams up with his grieving lover to orchestrate hilarious and clever torment." },
+
+
+            { id: 9, title: "Yashoda", industry: "Telugu", genre: "Sci-Fi", year: 2022, rating: 4.5, votes: 890, poster: "https://images.openai.com/static-rsc-4/aMbpY3aE5bxo3-gPa_G5r0mog_r_zf9pgnPsVvxRRhTjTjI-9n7222c1LMjcGZ0c6tzjtpTUDek7rZVOHS1xjr-BXyXwZMY_7I7yGnutq1t7eUiWj1CdYfZfoQpzmcSxS3tephobPh6qLseUGLAWq2hjiASANvv6V-rL_nRqRO0?purpose=inline", synopsis: "A surrogate mother enrolled in an elite medical facility uncovers dark corporate secrets.\nShe fights for survival against lethal underground medical experiments and powerful bosses." },
+
+
+            { id: 10, title: "HIT", industry: "Telugu", genre: "Thriller", year: 2020, rating: 4.7, votes: 950, poster: "https://images.openai.com/static-rsc-4/XM192PrhLsGLPwHrzdzZC6apG-OyqlrNRudXMH-neVcIPZJ-svwIKaLLgRfRP2prBXN9-iAMH7MHtdCUHq6UlxM-fUzOR_93wUM1YbgHy0PNSHUHGVhiq94f0aHAPgIFvlMW1N_d9NiXKh73wfrvT-y8kLaxxvHAl_OYB66pAKnxxoZb2d0us8tK4MP0PX06?purpose=fullsize", synopsis: "A traumatized police officer in the Homicide Intervention Team investigates a missing girl case.\nHe must conquer his inner demons and panic disorders to decode complex clues." },
+
+
+            { id: 11, title: "Virupaksha", industry: "Telugu", genre: "Thriller", year: 2023, rating: 4.8, votes: 1350, poster: "https://images.openai.com/static-rsc-4/eQbhe5bQOTazXOdVKP8zLp9aFpDAde-nuFW7E7omD7g4y4DYRrd-rW_sEDDSyt5t3YYccPqzfSVKcW1rRNwfb-KErg0z0xVreGjXSL1TPDnMAm5cL9fp6bxbcLMucq19tz69CzS-fY7MFgsA5HtLARFhkM7INY_aVypxQpU7_Hf62Qb5lwDKRdzCVJuvnUYs?purpose=fullsize", synopsis: "A mysterious series of supernatural deaths plagues an isolated ancient village.\nAn outsider steps in to unravel dark occult practices before panic consumes the community." },
+
+
+            { id: 12, title: "Rakshasudu", industry: "Telugu", genre: "Thriller", year: 2019, rating: 4.8, votes: 1250, poster: "https://images.openai.com/static-rsc-4/SXo1CvvUuCm6dfkCEpmOkQDm2N0XQzBc3_jvVLGt2AjglnLSuE6KaatOpYVCIbjejLHOiqCrWZLXyLL__4vTbc6P4tOdJLK-ivyTezUWUaxaI5amf_vHYXix4_5FprlOMQiwPZ0_-RaUaQftXqZTz2gwtKGpYAWhKQROTkwb_bP5igjlxn1BfU9m_vBxJiJN?purpose=fullsize", synopsis: "A diligent police trainee tracks a sadistic serial killer targeting schoolgirls.\nHe uses psychological profiling and relentless investigative grit to trap the psychopath." },
+
+
+            { id: 13, title: "Tholi Prema", industry: "Telugu", genre: "Romance", year: 1998, rating: 4.8, votes: 1600, poster: "https://images.openai.com/static-rsc-4/6poHQCO8p9dRexYc9MWJfmqOHdbKUCUvkfGJ_E6WxiBxXpWDLKzi5Q6ye5nFyqlj45j_WziRWCaXW7jOFToFcVIQecEonA_b_wg-6iT0ULo85pnerTnaARnpXdgvw8zNNvoDzbv6e20Zst7ZE8xVdKuqelHvQJam_QLGtjxw-w4BurjD1bgJM_HkedbAhPUR?purpose=fullsize", synopsis: "A carefree young man undergoes a profound emotional transformation upon falling in love.\nMisunderstandings and career ambitions test their enduring bond across continents." },
+
+
+            { id: 14, title: "Geetha Govindam", industry: "Telugu", genre: "Romance", year: 2018, rating: 4.7, votes: 1900, poster: "https://images.openai.com/static-rsc-4/LyHc1_-0fCt3_ST2ILhvkn3dA5gXSS-tqIhwx9oalvp_GQBO4lgwp7r5mh2WEM7ecdcFcEJymYoPgP5PcZDybohSk4vPZe0HXtE0UNw3R30hppPAWdxqkn_bHbFq2FZ_dX1Bioyq-8_i7NRk-1BE1pARAiPBaiq6TEk_-2NdAkBWyGEKpvIeQJgCZ1qAVp54?purpose=fullsize", synopsis: "An innocent college lecturer gets trapped in hilarious misunderstandings with a fierce doctor.\nTheir accidental encounters blossom into a heartwarming tale of love and redemption." },
+
+
+            { id: 15, title: "Uppena", industry: "Telugu", genre: "Romance", year: 2021, rating: 4.6, votes: 1300, poster: "https://images.openai.com/static-rsc-4/sNLePK-AVI3ac3UWNC6uMSRzw2AHoNULNI0TygRBuxk2HWcBpmHr3IUgeUft4-McY9BXEXL8YL0GD_W3mfr-IRswLxVlo6k5J8cpptzw7qLPdGziDSfVWIimfR482ZB5bTPffsgUJ8ZZBBfR8Z-JVba7GBYNkXLmMPsoYlF6msf_GioSU75IhTullccOMgeZ?purpose=fullsize", synopsis: "Two young sweethearts from opposing social backgrounds face fierce patriarchal backlash.\nThey choose an ultimate path of courage and sacrifice to protect their pure romance." },
+
+
+
+            // Hindi
+
+            { id: 16, title: "Animal", industry: "Hindi", genre: "Action", year: 2023, rating: 4.7, votes: 3500, poster: "https://images.openai.com/static-rsc-4/QlPlC73TZeyiBJ6T-ZqRNasUafKAE7sPk9r3PcUsDXVF5Lgz2k2V2omvBEKsq6MSIuO0TzoWv6RfCct5LBW9AsRI3-F51B6LQFzFp-kVX6Tu836H7fe7K2oVEaN6CsNju7OfeELtof-2pl_yxahtiNeeixwhoXGhKYnaWzKGGdQiIJ4IKlH_DBA_BEfBSDCP?purpose=fullsize", synopsis: "A complex son seeks vengeance against violent underworld rivals targeting his father.\nHis obsessive protectiveness triggers a brutal war of blood and psychological turbulence." },
+
+
+            { id: 17, title: "Dhurandhar", industry: "Hindi", genre: "Action", year: 2025, rating: 4.8, votes: 920, poster: "https://images.openai.com/static-rsc-4/aTZa0_0HzDRrBsCiIGqcl8Q72aiPvO6hBorW70Hg88VxXSvK6ScSXtBku4kcj8g6UA70IuynapCXYZ6AmwdSJ40O1wgaC8UBIidf5Mkpi3_WGQsZGwa_Q4oUHmWHom2DDV3Gr15M6fOyxtH84e0NB_R6qRGllb_rleUN-6Aa0lhCetDn1k0tlx0j77R2sC62?purpose=fullsize", synopsis: "Elite intelligence operatives undertake clandestine cross-border counter-terrorism missions.\nHigh-stakes espionage and covert combat test their ultimate patriotism and stealth." },
+
+
+            { id: 18, title: "Uri", industry: "Hindi", genre: "Action", year: 2019, rating: 4.9, votes: 3200, poster: "https://images.openai.com/static-rsc-4/g2_tYCgK9Nlt58tk4bpNjOZVUlzgWfFsZLdt1VzhYcstwB2vpUqJ9-v_LAf3ZILa9K-PZXo8xE1l5DAhTkws98KagloMZPqc4SM3knvSM7aVtXMUhsEbOO-1hsFbRKmq7chDLMtf1_2xigvzGghv6F-fP3vulHuvcLPsarPUSUI?purpose=inline", synopsis: "Based on the Indian military's surgical strikes following terrorist attacks in Uri.\nMajor Vihaan Singh Shergill leads an elite commando team on a midnight retaliatory mission." },
+
+
+            { id: 19, title: "12th Fail", industry: "Hindi", genre: "Drama", year: 2023, rating: 4.9, votes: 2900, poster: "https://images.openai.com/static-rsc-4/PSmr_gpkSmQynNDOFjLEj41pr4sDo5mLWIS2ZImCI-_i6pT34BpF7gfaXwdO5eFH6X37Bfi5Ny9j9D1weUXxd-9g49-MFyySj_CVLRIpaK8W9c2QZBqBHAYK-dCxKOGk5oY2oGIy0wBXrtRuPH4vsi9A13FrrXKU6j_3qzDY2EDKKnHG2hn0yIdYr_yCZXm9?purpose=fullsize", synopsis: "A boy from rural Chambal overcomes rampant academic corruption to crack the UPSC exam.\nGuided by resilience and mentors, he rewrites his destiny to become an IPS officer." },
+
+
+            { id: 20, title: "Laapataa Ladies", industry: "Hindi", genre: "Drama", year: 2024, rating: 4.8, votes: 1450, poster: "https://images.openai.com/static-rsc-4/9DzDLQYpSiuprqE0UxsGEyPYsVgFowQwyntqIKsd4eagm5lvTb06UC5GAVpjEuofEZHkBdAn39T9vzv4XOnzP7-qI5x1BBAbsNK35-xmkwBTqEQ6jNG8atoD5omzqVFdygN7_r5xWIhQ_4mfznE27IhrJSyE9OmKrbnVzWTGc_WfaXOVZSN6jfYlkpx7BO45?purpose=fullsize", synopsis: "Two young brides get accidentally swapped on a crowded rural train in 2001.\nA comical and heartwarming investigation uncovers empowerment and unexpected friendships." },
+
+
+            { id: 21, title: "Zindagi Na Milegi Dobara", industry: "Hindi", genre: "Drama", year: 2011, rating: 4.9, votes: 3800, poster: "https://images.openai.com/static-rsc-4/o3dWA9_kAvsQ3oKOo3nPTPupDtZJ11P4NZp2U1QH_KSCMwUjmuRuDEAbgoXo-4vmzSI4BcYZAbE2peVUHqmCMyLsdl7Ygv2Pmr0OdArurWE08ihgH9T_QO5tGIAlDLyomeIWcnDMWqoILY-O5vJf8dT9Jp5JRvlZ5T3cEJyQXTnlAvZj1oEKzZTZVcNYqBVP?purpose=fullsize", synopsis: "Three childhood friends embark on a bachelor road trip across Spain.\nEach daring adventure helps them confront deep fears, mend regrets, and celebrate life." },
+
+
+            { id: 22, title: "Krish", industry: "Hindi", genre: "Sci-Fi", year: 2006, rating: 4.7, votes: 2400, poster: "https://images.openai.com/static-rsc-4/FabTPfrs-MVj0Cmj0k4ultL67YC0SJWCCX5UFJEcAjia2YeGanVxB4jAwtbVi9TftnO53hs7b9lxGaKJtXzO1KDB3a0FxDAM-CGM1srkXsj552b4yww58h_sUMrs8tPCH4DgW201gT7BzzzqEWVEO0pf84pSt5y1SGKebYEY6eAB5nmMxaY00ppdINNw4uhh?purpose=fullsize", synopsis: "A young man with superhuman abilities inherits his father Jadoo's legacy.\nHe travels to Singapore to rescue his imprisoned scientist father under a masked persona." },
+
+
+            { id: 23, title: "Attack: Part 1", industry: "Hindi", genre: "Sci-Fi", year: 2022, rating: 4.5, votes: 1100, poster: "https://images.openai.com/static-rsc-4/aMbBpHzGpBi_rQ8HzgQabPrGP18KTnfkUNEkx7GmhRI9qChk4FCPGFbljqoCiCmpYbLHDnC07Dr1PoQOaIwYpi51n2bpJgAkYPBd9lGSdZ3qBLzC-3m2Clj2gxDfIbD1Ld6WyEOHE3yKRly31sBI_rOkBLnYl_27B8T00mbOWP4?purpose=inline", synopsis: "An injured soldier undergoes cutting-edge cybernetic neural implant augmentation.\nHe rises as India's first super-soldier to neutralize a high-profile parliament hostage crisis." },
+
+
+            { id: 24, title: "Merry Christmas", industry: "Hindi", genre: "Thriller", year: 2024, rating: 4.6, votes: 980, poster: "https://images.openai.com/static-rsc-4/H9i-KmBmvNE10xhCa-lpsNdG6ZWtnH6A7_LPndtZbVxmdUcgyNqcgBN83TBq628ZfnwRQ6OJGMejqTUjNXk9rYU0aNdfcq04sX1zbeGlygo1r5bOMFTZ2ZUSyuNqmRsMicK6gUBQwHZ5KFRS9MCe-2iP03-zxNy-5mNdC_6c2Lq3CviCXgapgdZpcKYTIUM2?purpose=fullsize", synopsis: "Two strangers meet on Christmas Eve in Mumbai for an enchanting night out.\nTheir romantic rendezvous takes an unexpected, dark twist filled with suspense." },
+
+
+            { id: 25, title: "Sector 36", industry: "Hindi", genre: "Thriller", year: 2024, rating: 4.7, votes: 890, poster: "https://images.openai.com/static-rsc-4/qAlEwFnorrgINTWcB-u-qUj5Y6gLezcXIf9C3VpPKtrneEHjMB1kGCXCDd7SgFL_TKm1JmsCDNkQ3D-a3VJ08uPtJc46XqnYiaYxC_5znFhb5I4_0YqgexRH6Vu9BdgDkeIcy5lWAlP7YfRsl0AZJT7q6ZUVVtMTg9lkCQTge-uF0ZWLL2tXe_kQwwxqbLXl?purpose=fullsize", synopsis: "Inspired by chilling true events involving serial abductions in a residential colony.\nA determined inspector unearths systemic horrors behind missing children cases." },
+
+
+            { id: 26, title: "Saiyyara", industry: "Hindi", genre: "Romance", year: 2025, rating: 4.8, votes: 750, poster: "https://images.openai.com/static-rsc-4/CsU3Hy5haarLSWAJnqkl64CWXd4ROwqjH_XK7HLOelBwFo6ZO9IRA_YO2r0JpyWcFEEG6RFJ8UW9tmGfVB_tbKUi7AVNxmzJN7BAVypYLyXFKPF_Zmi8PlnmtuNuafkNPWHe4ot_j-h0gy7pn6ewBtkooFnwdQCNHJOYLYftimVp2TS229VTT9xz8xgmDjaN?purpose=fullsize", synopsis: "A melodious musical romance capturing youthful passions and heartaches.\nTwo aspiring artists navigate ambition and love across city lights." },
+
+
+            { id: 27, title: "Aashiqui 2", industry: "Hindi", genre: "Romance", year: 2013, rating: 4.8, votes: 3100, poster: "https://images.openai.com/static-rsc-4/bLy3hCQukcpUJK_zc32_8nT9iwSdHmBvcJyrwwj4vviTf8LpYhZGwCsAh_ZLyD1YWUwxhlvX4KK0HtCL0aK7TGBWzPqqkL36ZgdMqkAVqrXvJY_tFp5uV2Hf21_AX40jm-wGZ_g_-PZ_OT7yUlBWfvDrPP-6HGTIn8mJpopDYiahbKFBO5QP-AyPwOzjhEKv?purpose=fullsize", synopsis: "A famous singing star battles alcoholism while launching a talented bar singer into stardom.\nTheir intense love story struggles against personal demons and tragic fame." },
+          
+
+  { id: 28, title: "Sanam Teri Kasam", industry: "Hindi", genre: "Romance", year: 2016, rating: 4.8, votes: 1900, poster: "https://images.openai.com/static-rsc-4/sJMjVbPLdH1ZP6iGGDDHb3NJAPWlJuMS1sEcexbIUcmk8Aa892LNFFE8m6SYUbk15U8eFcCRI9vQolEUklX3jm9uh5zbJP3rqqs17dRZb095Uru-1-I-rwIzYjyjULYxySYyZ-9oXdgkB1u_1Vsfbys2cQztme0gSE8tWoQnyiI?purpose=inline", synopsis: "An awkward librarian is rejected by her family, leading to an unexpected marriage with an ex-con.\nTheir profound romance unfolds through deep emotional heartbreak and redemption." },
+
+
+
+            // English
+
+
+            { id: 29, title: "Avengers (Endgame)", industry: "English", genre: "Action", year: 2019, rating: 5.0, votes: 6200, poster: "https://images.openai.com/static-rsc-4/qZQJgx5dkoD7mJML0nnGhTR3He-dvJ0PXtBrLLK5udIq-3YyH_gdDiCfeuxLNr6cCm9JD2KPMaf5Y9t7ltmkebf7Amhhtz1yqkUrmOf8d-vr_MHdlAVJ_0_FG4bUEuvj2F9ISiYrIurCvFVcyhdPvUi7S_wbYNBqiT_LowaeUyfDe7xx5kHGtztYRCgvfQYc?purpose=fullsize", synopsis: "The surviving Avengers assemble for one final time to reverse Thanos' catastrophic snap.\nAn epic time-heist and climactic battle determine the fate of the entire universe." },
+
+
+            { id: 30, title: "Deadpool and Wolverine", industry: "English", genre: "Action", year: 2024, rating: 4.8, votes: 4100, poster: "https://images.openai.com/static-rsc-4/339wpsXVSVjG9Jl7RSsSk7GLX-7vG08KcRPNMtxFaTes-NbcgggN-uK7O0twmGaFmFxoH-Y85zAkZx1Cp3GCgvMBlQsUki63j6i3efo6ZA5ggrX98yf2t4UKsfHxBU5OHFrai2DAMvO4XwMTDw1g9yWOYxxUyOMqmWpe0U3sPCY?purpose=inline", synopsis: "An irreverent Deadpool teams up with a grumpy, reluctant alternate-universe Wolverine.\nTogether, they embark on a multiverse-saving mission packed with meta-humor." },
+
+
+            { id: 31, title: "Spiderman: Brand New Day", industry: "English", genre: "Action", year: 2026, rating: 4.9, votes: 1200, poster: "https://images.openai.com/static-rsc-4/VZu6kUJPFnh2IBgOtf-mW59Ns1izjc2wUvZA1dL5NGxEgGO7TrgOskR5J9goAYjlT00J4K2uW2CHnf0O3Vq2qyF87CvAyO9LEcL0kfaGBiwErH42Q2B3Bxq9yNY209Vm_DHJ37mYBKXcS9LmgrKa99VLZu61c18UbGCgn-lF2Pzc1k6H181yFSWNr4IVHSTr?purpose=fullsize", synopsis: "Peter Parker navigates a fresh chapter of heroism and personal accountability.\nNew NYC syndicates emerge, forcing him to balance civilian life and web-slinging duties." },
+
+
+            { id: 32, title: "Interstellar", industry: "English", genre: "Sci-Fi", year: 2014, rating: 4.9, votes: 5500, poster: "https://images.openai.com/static-rsc-4/q1w8UMdq_ebzswzSOKdDjtzf8ggeq1s9j8jXc_tKwUbMcL_je1qTVxK0wy0-K22sHJH2YfcW-gmwi7H4-7WSpWfrBXhJLndAWIAcBrx1bi-eQlluCmaQvyf1ItCjc6XPeFcH3Qse4mbpbsiUsmM6qu5e_RFFgRcHH4TTw6stJBFw_qWiUD-qnM8X_1E-nUQ8?purpose=fullsize", synopsis: "A team of astronauts travel through a wormhole in search of a new habitable home for humanity.\nTime dilation and gravitational anomalies test their courage and paternal love." },
+
+
+            { id: 33, title: "Inception", industry: "English", genre: "Sci-Fi", year: 2010, rating: 4.9, votes: 5800, poster: "https://images.openai.com/static-rsc-4/1EOX1RR6owKhmSgH9V--1wihHlMoD4EV3VbC_fFaKCs88SIP4wEFFU8E9BLaOH5t5UDVDtYQA4MZwkd7eBtUayaAipjl7_3g-yluSGtzAA4o045XaCU6D9m5WLJiO2LHGyvKZnFFxwrsxlcnxbX34UWcyqFJOrWg4TqlIGfF_xLWHYoKvxZmVjX1pvyiYa4e?purpose=fullsize", synopsis: "A skilled thief who infiltrates dreams to steal corporate secrets is offered a chance to clear his record.\nHe must plant an idea inside a CEO's subconscious across multi-layered dreams." },
+
+
+            { id: 34, title: "Avatar", industry: "English", genre: "Sci-Fi", year: 2009, rating: 4.8, votes: 4900, poster: "https://images.openai.com/static-rsc-4/4MherjbPh7lr0P_pKRrttotkpquM1LOAiQSPZGYL5Et4SE3rkMbUB__AxutADEQfbMvtESncHbSt_9_EHY7FKYu3B8pjJuo6nfcIfgizZ2q9e4Fd39OxpWvgEw4psqQNtyL7MHCC0M3XTn38mGq8NVBNmeDvOw7ducCCyb9DyibfOwTH1g9EoUZnuVBj9zb6?purpose=fullsize", synopsis: "A paraplegic marine on Pandora uses an avatar body to infiltrate the indigenous Na'vi clan.\nHe falls in love with their culture and leads a fierce battle to protect their paradise." },
+
+
+            { id: 35, title: "Titanic", industry: "English", genre: "Romance", year: 1997, rating: 4.8, votes: 5100, poster: "https://images.openai.com/static-rsc-4/4zjgtPGYpOFNQWJaqr3ja75qJJE-siahNgS3jUvRRHhW4qBJ_9x1HEUHVQM3ToqJD0XDap2tJyNwPBq8gf_E9uoLpI9KwmLCwylJoT4QRyk5JEtOwMmRxUrG-sxMnJq93HTw65ku9eoZU9DIJD2dlzQ0fThfx9-Bpnx37jGwoioc8bvz3FRRZU3HaSO5pQ3H?purpose=fullsize", synopsis: "An aristocratic young woman falls in love with a penniless artist aboard the doomed RMS Titanic.\nTheir legendary romance transcends class divides amidst the tragic sinking." },
+
+
+            { id: 36, title: "The Fault in Our Stars", industry: "English", genre: "Romance", year: 2014, rating: 4.7, votes: 3400, poster: "https://images.openai.com/static-rsc-4/mW_YbPCJKYij6FikMzZC4LigjSUGpzMF7sav8gh2UrXisyusSPEYySUv_US2jY39Fb1KfBqe2HwoeEtTDUwF2zPJH_Hx85r4sKk49g_0-CUaaazyD0PsPAtZdSGEQo7A682ydXxvXZpXlM73P3kPd6pIKCrr2kMAYKBZVzLh1jWzBSKKlkhNeDPePNhiqZ07?purpose=fullsize", synopsis: "Two teenagers battling terminal cancer meet at a support group and fall deeply in love.\nThey embark on an emotional journey to Amsterdam to meet their favorite author." },
+
+
+            { id: 37, title: "The Notebook", industry: "English", genre: "Romance", year: 2004, rating: 4.8, votes: 4300, poster: "https://images.openai.com/static-rsc-4/P9cJ_nzShGwBZeuHvorFLLzJmPBuZi9hfT37UG9pPB7BOn2PUlan_iplMayCLx9MfQilouLXp0odj2WD6AcVsZEQq6mlZPCUJSgQrWJTr6Me5M4hNhF8oD3QCnOQHTgRufCDCkj93vJo_INtuGVb7BQf5Hj5uUlIJjBpk1l-a91kHbs21pwCQhF022uUT5Ug?purpose=fullsize", synopsis: "An elderly man reads a poignant love story from his notebook to a woman with memory loss.\nThe tale recounts how a young couple's passionate romance endured years of separation." },
+
+
+
+            // Tamil
+
+
+            { id: 38, title: "Leo", industry: "Tamil", genre: "Action", year: 2023, rating: 4.8, votes: 2200, poster: "https://images.openai.com/static-rsc-4/KbZvk2uMRB41Vw4mDKIue-xSgX7_hvJVZ7F5ngWYiqzoGBs8fY-X5Aaufs_F4X13OlvlESANVdjQazRxnBWZ9tAQTtCQyT-zB0ZH4ix_PDYHJ_iNJRO3iwvuX0bBfXt_PRCGMDJFcpgYxHh0ojczOxVMNMNT-2kNdthqoQbizTFrvO62co4JI8cNOGD_hxcS?purpose=fullsize", synopsis: "A mild-mannered cafe owner in Himachal Pradesh fends off a brutal drug cartel.\nHis mysterious past catches up to him, unleashing a fierce, dormant alter-ego." },
+
+
+            { id: 39, title: "Jailer", industry: "Tamil", genre: "Action", year: 2023, rating: 4.8, votes: 2600, poster: "https://images.openai.com/static-rsc-4/tTTKzLSwstlK8eU8L1yr8IAxUEZAjfOz6YzDaN7YHhA8FhUdMxf7-dbSCG2MKJOvbtNLPJqnlqZdqvxPs3b6wt6_cQ3qoMaVKeRXdWn8vlNRQPFDt7umErg-cvtdpD6lnqISffBcQMkFZHLLd-Wavmcm_xnqpmvK7zfjZV0Xxl_L6mEEjglCgIUlagnvm8Wt?purpose=fullsize", synopsis: "A retired jailer goes on a ruthless manhunt when a criminal syndicate targets his family.\nHis hidden lethal persona shocks his enemies in high-octane action sequences." },
+
+
+            { id: 40, title: "Vikram", industry: "Tamil", genre: "Action", year: 2022, rating: 4.9, votes: 2900, poster: "https://images.openai.com/static-rsc-4/ytlXUmVkc8jiNo6DNxkf9zRe76A0KZ7aOvraGs335urCYZ0i4nU92lAPx5VARQowZ1GIU9qCtMsdbqYwj_g-5hwocXWIOmx69GTM_5vXdQvQdKFS5w1lzQhrCturbm1T-ye7AWAb8lY-8WHGE8aVlOhuOS12f49HO8mtcGDe9jV4yVi0CTLEdZWmU6yvobD6?purpose=fullsize", synopsis: "A black-ops agent and his team track down masked vigilantes wiping out drug lords.\nA web of undercover agents and international cartels leads to explosive showdowns." },
+
+
+            { id: 41, title: "Vaazha", industry: "Tamil", genre: "Drama", year: 2024, rating: 4.7, votes: 980, poster: "https://images.openai.com/static-rsc-4/coDAyMYgpIlXRoJ_OdC6uW6DY3c12C7VQ03E-5jd38eQQ3u_EpwlusUXKWIrcpFE4aHBY5nrM_EO88xcb0dTBlae8ob5z02vADNeuox1CoKHnKxvL3WCW3gzAU8hZSgcZubF0xe2TG80rQYesufZBcB8Rkg891fY8SjaCwHym9MAUOuxOCTAw355jAfIsfCN?purpose=fullsize", synopsis: "A heartwarming coming-of-age story of young boys navigating parental expectations.\nTheir struggles and aspirations highlight the true value of friendship and self-worth." },
+
+
+            { id: 42, title: "Mandaadi", industry: "Tamil", genre: "Drama", year: 2025, rating: 4.6, votes: 650, poster: "https://images.openai.com/static-rsc-4/6m3rIvioWH14shnrWZaApz-WmB_Vn9NEQpf825vdn1_pdKpTHX0knuUmG8dc0YW__-8torEPmVMLUnJXayIRJXrMIj6vKC7TmvYSorCgImayDDN2n0F_k7uq1TtsA2V3vjzK3Hv_W7LLMRvk39iUhwvPvJTZEvCtCA_r0CW43bC3CJY-ZZg5-9jHZNeKlGnM?purpose=fullsize", synopsis: "A compelling rural drama exploring familial honor, land disputes, and local politics.\nLocal leaders navigate moral dilemmas to preserve their community's heritage." },
+
+
+            { id: 43, title: "Asuran", industry: "Tamil", genre: "Drama", year: 2019, rating: 4.9, votes: 2100, poster: "https://images.openai.com/static-rsc-4/IW2HZJLzuB9fY0_whH-kdkhj8vjB-OccpKgu39aPNOjsqG7WrNYnCpMRUpckiVhmg8ioZF07-Bgmy_2zT-iEM1KelFzsyeae4CJzdRuN-Jp_csYxIxK85tRgngU3atsaAJzVurPqKFofytVgUVExFa4rtyvAIeOj98HSXV0X8LeBRFkiYWlWkVkzx2-EaWjD?purpose=fullsize", synopsis: "A pacifist farmer must protect his hot-headed son from upper-caste landlords.\nHis terrifying past as a fierce warrior resurfaces to shield his family from annihilation." },
+
+
+            { id: 44, title: "Por Thozhil", industry: "Tamil", genre: "Thriller", year: 2023, rating: 4.9, votes: 1850, poster: "", synopsis: "A rookie cop with anxiety and a cynical veteran investigator track a brutal serial killer.\nTheir contrastihttps://images.openai.com/static-rsc-4/XXtYItB__3Ht3EsHEEGsau5NJDOS5lWII9UavtUW95aLlW0SaK2c6VX_HsyL8v-ZWXnsUyLMQaAJyAexa7QObPYf8hKivuETnaeqKKoT5UpCVhYYDCJUsazHfzbV7U4dpJbpzVvcSLqHyYYSZMSzNamCsovlnib9ef1HDsnLVVLgemCFf2gCei87EYPtRwDZ?purpose=fullsizeng mentorship style shapes a gripping cat-and-mouse hunt." },
+
+
+            { id: 45, title: "Maharaja", industry: "Tamil", genre: "Thriller", year: 2024, rating: 4.9, votes: 2400, poster: "https://images.openai.com/static-rsc-4/ZXII4gpWLPoUAq4EGYZ3yAcgu5gUKIwRqIPQZAk8ozaRoza-dIOmfkXzd1vIBRduW9Aaymk9Ds9cSK3DY8dDKpVpxbU5fu6_sD7ow_8wSh8APYqilTAmEmc5tM-grYtZwSbuxBNaBRnwGpH9kMGiB6VzjukPvBIL-jfTe01NH4u0qK6EckVBkpokeLhArRGZ?purpose=fullsize", synopsis: "A barber seeks mysterious vengeance after an intruder attacks his home.\nIntricate non-linear storytelling uncovers a shattering quest for justice." },
+
+
+            { id: 46, title: "Demonte Colony", industry: "Tamil", genre: "Thriller", year: 2015, rating: 4.6, votes: 1100, poster: "https://images.openai.com/static-rsc-4/ywsGyzBgIZyTehCiAUzsOlDqRlO6lX0pWxTMLnBg57PdGBpvbVJMhb_Apz_5DW9P5ZK49ExXquXHiUwBCXORdTe_GHehmroE46jFt8jFDbfLQdq3Uk_HvmTmeWOrh6pkXrmyHYZrbwWqsKlNi_ZpbX8RiN2pBLrGliLjK1jB3mSkwksgVIPNHtzvbO7NIGO7?purpose=fullsize", synopsis: "Four friends explore a notorious haunted bungalow in Chennai for a YouTube segment.\nMalevolent spirits trap them in a terrifying paranormal nightmare." },
+
+
+            { id: 47, title: "96", industry: "Tamil", genre: "Romance", year: 2018, rating: 4.9, votes: 2800, poster: "https://images.openai.com/static-rsc-4/rfJctbg-TghiA6V_aHC3SIod7qE3GSk6G__qljSUm49Lp6dU55Dc8-xEC86KBWUqEfllcR7bGJmMvxYNZYZl6JncrQLoTawuVL586F0WRqcY9mQAo-xtGYQl5LSJNFG2XxZ-RsQnhQwVs9CaxNlDWszdtSO2uZtXYRpRDN3ve3-_j5pB5h6b88VDEB_NqlH9?purpose=fullsize", synopsis: "High school sweethearts reunite at a 22-year school alumni gathering.\nThey spend a single magical night reminiscing about lost love and unfulfilled promises." },
+
+
+            { id: 48, title: "Dude", industry: "Tamil", genre: "Romance", year: 2025, rating: 4.7, votes: 720, poster: "https://images.openai.com/static-rsc-4/d86D_LkEj6NGaA3hATe33NVdzdugGjSqLPLB7ZMv1V4Wx66I8rkx0iK7RqvrhGCBXwqvasfbq2K0zIutD7eP_VJUKSe9zGoicOX-yYvCSXzvhv_mtmn2ela7jVM3K69bc0MnWNYdl2czwZgGa6gYV9pfz5v12GNeySsmS9-fZbCmSz0bcppb9V4TvvB8MtBZ?purpose=fullsize", synopsis: "A quirky urban romance exploring modern dating eccentricities and commitment.\nTwo contrasting personalities discover true connection amidst chaotic city lives." },
+
+
+            { id: 49, title: "Premalu", industry: "Tamil", genre: "Romance", year: 2024, rating: 4.8, votes: 1650, poster: "https://images.openai.com/static-rsc-4/oCAXJt9n10HoF1ClY7wtjA1z9Yqp7ubo2Yf8ZIO_5ZOCbb_At6puow9xafTyQXImxzu7NW9xbyzeWzmu6-45eXUyS9Cu4LeC3YsP6ceYda-caKO5d4jxwwAzO4Clh0gfxRnhnqJcDBr59jdYxaMzw427GUBzq_a6LF31D9mHQNgZxjtelS-zfS2Lt2AIrPqT?purpose=fullsize", synopsis: "An unemployed youth tries his luck in Hyderabad while falling for a career-driven woman.\nHilarious romantic mishaps ensue as he competes with sophisticated suitors." }
+        ];
+
+        let userRatingsCount = 0;
+        let currentUser = null;
+        let genreChartInstance = null;
+        let industryChartInstance = null;
+
+        // Auth Switcher & Gmail Validation
+        function switchAuthTab(tab) {
+            const isLogin = tab === 'login';
+            document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 shadow-sm transition' : 'flex-1 py-2 text-sm font-medium text-slate-500 rounded-lg transition';
+            document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 shadow-sm transition' : 'flex-1 py-2 text-sm font-medium text-slate-500 rounded-lg transition';
+            document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+            document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            if(!email.endsWith('@gmail.com')) {
+                alert('Access restricted: Please enter a valid @gmail.com email address.');
+                return;
+            }
+            loginSuccess(email, email.split('@')[0]);
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            if(!email.endsWith('@gmail.com')) {
+                alert('Registration restricted: Email must end with @gmail.com.');
+                return;
+            }
+            loginSuccess(email, name);
+        }
+
+        function loginSuccess(email, name) {
+            currentUser = { email, name };
+            document.getElementById('user-display-name').textContent = name;
+            document.getElementById('user-display-email').textContent = email;
+            document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('welcome-header-text').textContent = `Welcome, ${name}!`;
+            document.getElementById('dash-welcome-title').textContent = `Welcome back, ${name}!`;
+
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+
+            initDashboard();
+            setTimeout(() => triggerAIAssistant(), 500);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+        }
+
+        // Navigation
+        function switchTab(tabId) {
+            ['home', 'explorer', 'add-movie', 'ratings', 'recs', 'settings'].forEach(t => {
+                const el = document.getElementById(`view-${t}`);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`nav-${t}`);
+                if(btn) btn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition";
+            });
+            const activeView = document.getElementById(`view-${tabId}`);
+            if(activeView) activeView.classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if(activeBtn) activeBtn.className = "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-white transition";
+        }
+
+        // Settings (Vibrant Color Palettes & Fonts)
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function changeColorPalette(color) {
+            const body = document.getElementById('body-font');
+            body.className = body.className.replace(/theme-\w+/g, '');
+            body.classList.add(`theme-${color}`);
+            renderCharts();
+        }
+
+        function changeFontFamily(font) {
+            const body = document.getElementById('body-font');
+            body.className = body.className.replace(/font-\w+/g, '');
+            body.classList.add(`font-${font}`);
+        }
+
+        // Dashboard Init & Render
+        function initDashboard() {
+            document.getElementById('stat-total-movies').textContent = moviesData.length;
+            renderMovieGrid(moviesData);
+            renderRatingMoviesList();
+            renderCharts();
+        }
+
+        function renderMovieGrid(data) {
+            const grid = document.getElementById('movie-grid');
+            grid.innerHTML = data.map(m => `
+                <div onclick="openMovieDetail(${m.id})" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md transition group">
+                    <div>
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-3 right-3 bg-black/60 backdrop-blur text-white text-xs px-2.5 py-1 rounded-full font-semibold">${m.industry}</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="font-bold text-base truncate">${m.title}</h4>
+                                <span class="text-xs text-slate-400 font-medium">${m.year}</span>
+                            </div>
+                            <p class="text-xs text-primary font-semibold mb-2">${m.genre}</p>
+                            <!-- Synopsis strictly in 2 lines -->
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2 leading-relaxed">${m.synopsis}</p>
+                            <div class="flex items-center justify-between text-xs text-slate-500">
+                                <span><i class="fa-solid fa-star text-amber-500 mr-1"></i> ${m.rating} (${m.votes} votes)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Pop up details when tapping a movie card
+        function openMovieDetail(id) {
+            const m = moviesData.find(item => item.id === id);
+            if(!m) return;
+            const modalInner = document.getElementById('modal-content-inner');
+            modalInner.innerHTML = `
+                <div class="h-72 relative">
+                    <img src="${m.poster}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                    <span class="absolute top-4 left-4 bg-primary text-white text-xs px-3 py-1 rounded-full font-semibold">${m.industry} • ${m.genre}</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-2xl font-bold">${m.title}</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Released in ${m.year}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-bold text-amber-500"><i class="fa-solid fa-star"></i> ${m.rating}</span>
+                            <p class="text-[10px] text-slate-400">${m.votes} Total Votes</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Synopsis</h4>
+                        <p class="text-sm leading-relaxed whitespace-pre-line">${m.synopsis}</p>
+                    </div>
+                    <button onclick="closeMovieDetailModal()" class="w-full py-2.5 bg-primary text-white font-semibold rounded-xl text-sm transition">Close Details</button>
+                </div>
+            `;
+            document.getElementById('movie-detail-modal').classList.remove('hidden');
+        }
+
+        function closeMovieDetailModal() {
+            document.getElementById('movie-detail-modal').classList.add('hidden');
+        }
+
+        function filterMovies() {
+            const query = document.getElementById('search-movie').value.toLowerCase();
+            const industry = document.getElementById('filter-industry').value;
+            const genre = document.getElementById('filter-genre').value;
+
+            const filtered = moviesData.filter(m => {
+                const matchQuery = m.title.toLowerCase().includes(query);
+                const matchIndustry = industry === 'All' || m.industry === industry;
+                const matchGenre = genre === 'All' || m.genre === genre;
+                return matchQuery && matchIndustry && matchGenre;
+            });
+            renderMovieGrid(filtered);
+        }
+
+        // Add or Edit Movie Handler
+        function handleAddNewMovie(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-title').value;
+            const industry = document.getElementById('new-industry').value;
+            const genre = document.getElementById('new-genre').value;
+            const year = parseInt(document.getElementById('new-year').value);
+            const rating = parseFloat(document.getElementById('new-rating').value);
+            const synopsis = document.getElementById('new-synopsis').value;
+            let poster = document.getElementById('new-poster').value.trim();
+
+            if (!poster) {
+                poster = "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600";
+            }
+
+            const existing = moviesData.find(m => m.title.toLowerCase() === title.toLowerCase());
+            if(existing) {
+                existing.industry = industry;
+                existing.genre = genre;
+                existing.year = year;
+                existing.rating = rating;
+                if(synopsis) existing.synopsis = synopsis;
+                if(poster) existing.poster = poster;
+                alert(`Movie "${title}" updated successfully!`);
+            } else {
+                const newMovie = { id: moviesData.length + 1, title, industry, genre, year, rating, votes: 1, poster, synopsis: synopsis || 'Custom user-added film.' };
+                moviesData.unshift(newMovie);
+                alert(`New movie "${title}" added successfully!`);
+            }
+
+            initDashboard();
+            switchTab('explorer');
+            e.target.reset();
+        }
+
+        // Movie Ratings View Logic
+        function renderRatingMoviesList() {
+            const container = document.getElementById('rating-movies-list');
+            container.innerHTML = moviesData.slice(0, 10).map(m => `
+                <div class="flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl gap-4 border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <img src="${m.poster}" class="w-14 h-14 rounded-xl object-cover">
+                        <div>
+                            <h4 class="font-bold text-sm">${m.title}</h4>
+                            <p class="text-xs text-slate-400">${m.industry} • ${m.genre} (${m.year})</p>
+                            <p class="text-xs text-amber-500 font-semibold mt-1"><i class="fa-solid fa-star"></i> Current Rating: ${m.rating} (${m.votes} votes)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <select id="rating-val-${m.id}" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+                            <option value="5">5 - Masterpiece</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Below Avg</option>
+                            <option value="1">1 - Poor</option>
+                        </select>
+                        <button onclick="submitMovieRating(${m.id})" class="px-4 py-1.5 bg-primary text-white text-xs font-semibold rounded-xl transition">Submit</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function submitMovieRating(id) {
+            const movie = moviesData.find(m => m.id === id);
+            const val = parseFloat(document.getElementById(`rating-val-${id}`).value);
+            
+            movie.rating = ((movie.rating * movie.votes + val) / (movie.votes + 1)).toFixed(1);
+            movie.votes += 1;
+            userRatingsCount += 1;
+            
+            document.getElementById('stat-user-ratings').textContent = userRatingsCount;
+            renderRatingMoviesList();
+            renderCharts();
+            alert(`Your rating for "${movie.title}" has been recorded.`);
+        }
+
+        // Redesigned Recommendation Logic
+        function handleCustomRecommendation(e) {
+            e.preventDefault();
+            const title = document.getElementById('rec-input-title').value;
+            const rating = parseFloat(document.getElementById('rec-input-rating').value);
+            const industry = document.getElementById('rec-input-industry').value;
+            const genre = document.getElementById('rec-input-genre').value;
+
+            if(!moviesData.some(m => m.title.toLowerCase() === title.toLowerCase())) {
+                moviesData.unshift({
+                    id: moviesData.length + 1,
+                    title,
+                    industry,
+                    genre,
+                    year: 2026,
+                    rating,
+                    votes: 1,
+                    poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600",
+                    synopsis: "User-recommended film entry.\nTailored for cinematic enjoyment."
+                });
+                initDashboard();
+            }
+
+            const recs = moviesData.filter(m => m.title.toLowerCase() !== title.toLowerCase() && (m.genre === genre || m.industry === industry))
+                .sort((a, b) => b.rating - a.rating)
+                .slice(0, 3);
+
+            const resultsContainer = document.getElementById('recommendations-results');
+            resultsContainer.innerHTML = recs.map(r => `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <span class="text-xs font-semibold bg-primary-soft text-primary px-2.5 py-1 rounded-full">${r.industry} • ${r.genre}</span>
+                    <h4 class="font-bold text-lg mt-3 mb-1">${r.title}</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">${r.synopsis}</p>
+                    <div class="flex justify-between items-center text-xs font-semibold">
+                        <span class="text-amber-500"><i class="fa-solid fa-star mr-1"></i> ${r.rating} Rating</span>
+                        <span class="text-slate-400">${r.year}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            alert(`"${title}" has been added to the Movie Explorer and recommendations generated!`);
+        }
+
+        // Charts
+        function renderCharts() {
+            const genreCounts = {};
+            moviesData.forEach(m => genreCounts[m.genre] = (genreCounts[m.genre] || 0) + 1);
+
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#4f46e5';
+
+            if (genreChartInstance) genreChartInstance.destroy();
+            genreChartInstance = new Chart(document.getElementById('genreChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(genreCounts),
+                    datasets: [{ data: Object.values(genreCounts), backgroundColor: [primaryColor, '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const industries = ['Telugu', 'Hindi', 'English', 'Tamil'];
+            const avgRatings = industries.map(ind => {
+                const indMovies = moviesData.filter(m => m.industry === ind);
+                if(indMovies.length === 0) return 4.5;
+                const sum = indMovies.reduce((acc, curr) => acc + parseFloat(curr.rating), 0);
+                return (sum / indMovies.length).toFixed(2);
+            });
+
+            if (industryChartInstance) industryChartInstance.destroy();
+            industryChartInstance = new Chart(document.getElementById('industryRatingChart'), {
+                type: 'bar',
+                data: {
+                    labels: industries,
+                    datasets: [{ label: 'Average Rating', data: avgRatings, backgroundColor: primaryColor, borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, min: 4.0, max: 5.0 } } }
+            });
+        }
+
+        // AI Assistant Tour
+        let aiStep = 1;
+        const aiSteps = [
+            "Welcome to MovieMate! You logged in securely with your @gmail.com account.",
+            "Explore your requested films across Telugu, Hindi, English, and Tamil industries. Tap any movie card to popup its ratings, genre, and synopsis!",
+            "Use the Recommendations tab to enter a movie name and rating—it will automatically populate the Explorer!"
+        ];
+
+        function triggerAIAssistant() {
+            aiStep = 1;
+            document.getElementById('ai-modal-text').textContent = aiSteps[0];
+            document.getElementById('ai-step-indicator').textContent = "Step 1 of 3";
+            document.getElementById('ai-modal').classList.remove('hidden');
+        }
+
+        function nextAIStep() {
+            aiStep++;
+            if (aiStep <= 3) {
+                document.getElementById('ai-modal-text').textContent = aiSteps[aiStep - 1];
+                document.getElementById('ai-step-indicator').textContent = `Step ${aiStep} of 3`;
+            } else {
+                closeAIModal();
+            }
+        }
+
+        function closeAIModal() {
+            document.getElementById('ai-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
